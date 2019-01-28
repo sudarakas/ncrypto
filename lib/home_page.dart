@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'dart:convert/';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
+  final List cryptos;
+  HomePage(this.cryptos);
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -17,17 +19,7 @@ class _HomePageState extends State<HomePage> {
     Colors.blue
   ];
 
-  @override
-  void initState() async {
-    super.initState();
-    cryptos = await getCryptos();
-  }
-
-  Future<List> getCryptos() async {
-    String apiUrl = "http://api.coinmarketcap.com/v1/ticker/?limit=50";
-    http.Response response = await http.get(apiUrl);
-    return json.decode(response.body);
-  }
+  get children => null;
 
   @override
   Widget build(BuildContext context) {
@@ -41,23 +33,54 @@ class _HomePageState extends State<HomePage> {
 
   Widget _ncryptoWidget() {
     return new Container(
-      child: new Flexible(
+        child: new Column(
+       children: <Widget>[new Flexible(
         child: new ListView.builder(
-          itemCount: cryptos.length,
+          itemCount: widget.cryptos.length,
           itemBuilder: (BuildContext context, int index) {
-            final Map crypto = cryptos[index];
+            final Map crypto = widget.cryptos[index];
             final MaterialColor color = _colors[index % _colors.length];
-
             return _getListUI(crypto, color);
           },
         ),
-      ),
-    );
+      ),],
+    ));
   }
 
   ListTile _getListUI(Map crypto, MaterialColor color) {
     return new ListTile(
-      leading: new CircleAvatar(backgroundColor: color,),
+      leading: new CircleAvatar(
+        backgroundColor: color,
+        child: new Text(crypto['name'][0]),
+      ),
+      title: new Text(
+        crypto['name'],
+        style: new TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: _getSubtitle(crypto['price_usd'], crypto['percent_change_1h']),
+      isThreeLine: true,
+    );
+  }
+
+  Widget _getSubtitle(String priceInUSD, String precentageVariable) {
+    TextSpan priceTextWidget = new TextSpan(
+        text: "\$$priceInUSD\n", style: new TextStyle(color: Colors.black));
+    String precentageVariableText = "1 Hour: $precentageVariable%";
+    TextSpan precentageVariableTextWidget;
+
+    if (double.parse(precentageVariable) > 0) {
+      precentageVariableTextWidget = new TextSpan(
+          text: precentageVariableText,
+          style: new TextStyle(color: Colors.green));
+    } else {
+      precentageVariableTextWidget = new TextSpan(
+          text: precentageVariableText,
+          style: new TextStyle(color: Colors.red));
+    }
+
+    return new RichText(
+      text: new TextSpan(
+          children: [priceTextWidget, precentageVariableTextWidget]),
     );
   }
 }
